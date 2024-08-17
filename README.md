@@ -332,7 +332,11 @@ docker push <your-docker-hub-username>/flask-server
 
 ### Step 3.3: Verify Cluster Setup:
 
-- SSH into the master node and verify that all nodes are part of the cluster:
+- SSH into the master node and set the permission.
+    ```sh
+    sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+    ```
+- Run this command to verify all nodes
   ```bash
   kubectl get nodes
   ```
