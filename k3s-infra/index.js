@@ -93,7 +93,7 @@ exports.publicInstanceIp = nginxInstance.publicIp;
 
 
 const masterInstance = new aws.ec2.Instance("master-instance", {
-    instanceType: "t2.micro",
+    instanceType: "t3.small",
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
@@ -109,7 +109,7 @@ exports.publicInstanceIp = masterInstance.publicIp;
 
 
 const worker1Instance = new aws.ec2.Instance("worker1-instance", {
-    instanceType: "t2.micro",
+    instanceType: "t3.small",
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
@@ -122,4 +122,20 @@ const worker1Instance = new aws.ec2.Instance("worker1-instance", {
 
 exports.publicInstanceId = worker1Instance.id;
 exports.publicInstanceIp = worker1Instance.publicIp;
+
+
+const worker2Instance = new aws.ec2.Instance("worker2-instance", {
+    instanceType: "t3.small",
+    vpcSecurityGroupIds: [publicSecurityGroup.id],
+    ami: amiId,
+    subnetId: publicSubnet.id,
+    keyName: "MyKeyPair",
+    associatePublicIpAddress: true,
+    tags: {
+        Name: "worker2"
+    }
+});
+
+exports.publicInstanceId = worker2Instance.id;
+exports.publicInstanceIp = worker2Instance.publicIp;
 
