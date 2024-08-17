@@ -531,7 +531,7 @@ cd Nginx
     telnet <worker-node-ip> 30001
     ```
 
-    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-5.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-16.png)
 
 ## Step 7: Verification
 
