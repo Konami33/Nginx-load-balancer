@@ -220,6 +220,8 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     exports.publicInstanceIp = worker2Instance.publicIp;
     ```
 
+**NOTE:** Update the security group accordingly
+
 ### Step 1.4: Deploy the Pulumi Stack
 
 1. **Run Pulumi Up**:
