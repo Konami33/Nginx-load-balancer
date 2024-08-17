@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: server1
-        image: your-dockerhub-username/flask-server-1:latest
+        image: konami98/flask-server-1:v2
         ports:
         - containerPort: 5001
 
