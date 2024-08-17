@@ -2,30 +2,27 @@
 
 ## Overview
 
-In this scenario, you are tasked with setting up a lightweight Kubernetes environment using K3s on an AWS EC2 instance. Following the installation, you will configure Nginx as a Layer 4 load balancer to manage traffic to your Kubernetes services. The services will be exposed using Kubernetes NodePort, allowing external access through Nginx.
+In this lab, we will set up a lightweight Kubernetes environment using `K3s` on an AWS EC2 instance. Following the installation, we will configure Nginx as a `Layer 4 load balancer` to manage traffic to worker nodes. The services will be exposed using Kubernetes NodePort, allowing external access through Nginx.
 
 ![alt text](image-8.png)
 
 1. Create AWS infrastructure using PULUMI
-2. Install and configure k3s and worker nodes
-3. Deploy the servers in k3s cluster.
-4. Install Nginx on the load balancer EC2 instance
-5. Configure Nginx to load balance traffic to the worker node EC2 instances
-6. Test the load balancer to ensure it is working correctly
+2. Create a simple flask server, build image, push to docker hub
+3. Install and configure k3s and worker nodes
+4. Deploy the servers in k3s cluster.
+5. Install Nginx on the load balancer EC2 instance
+6. Configure Nginx to load balance traffic to the worker node EC2 instances
+7. Test the load balancer to ensure it is working correctly
 
-![alt text](image-7.png)
+![alt text](image-12.png)
 
 ## Step by step guide
 
 ## Step 1: Create AWS infrastructure using PULUMI
 
-For this project, we need an instance for NGINX, and three instance for k3s (master-ec2,)
+For this project, we need an instance for NGINX, and three instance for k3s (master-instance, worker1-instance, worker2-instance)
 
 ### Step 1.1: Configure AWS CLI
-
-### Install AWS CLI
-
-Before proceeding, ensure that the AWS CLI is installed on your local machine. Follow the instructions below based on your operating system:
 
 #### Configure AWS CLI
 
@@ -245,9 +242,72 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 - After the deployment completes, you should see the exported VPC ID, public subnet ID, private subnet ID, NAT Gateway ID, and instance IDs in the output.
 
 
-## Step 2: Install and configure k3s and worker nodes
+## Step 2: Create a simple flask server, build image, push to docker hub
 
-### Step 2.1: Install k3s on Master Node:
+- Create a directory (e.g., flask-server-1)
+
+    ```sh
+    mkdir flask-server-1
+    cd flask-server-1
+    ```
+- Create a file `app.py`
+
+    ```sh
+    from flask import Flask, jsonify
+
+    app = Flask(__name__)
+
+    @app.route('/')
+    def home():
+        return "Hello, from Flask server 1!"
+
+    @app.route('/api/data')
+    def get_data():
+        data = {"message": "Hello, World!", "status": "success"}
+        return jsonify(data)
+
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=5001)
+    ```
+
+- Create a file `Dockerfile`
+
+    ```sh
+    # Use an official Python runtime as a parent image
+    FROM python:3.9-slim
+
+    # Set the working directory in the container
+    WORKDIR /app
+
+    # Copy the current directory contents into the container at /app
+    COPY . /app
+
+    # Install any needed packages
+    RUN pip install --no-cache-dir Flask
+
+    # Make port 5001 available to the world outside this container
+    EXPOSE 5001
+
+    # Define environment variable
+    ENV FLASK_APP=app.py
+
+    # Run app.py when the container launches
+    CMD ["flask", "run", "--host=0.0.0.0", "--port=5001"]
+    ```
+
+- Build and push the image to docker hub
+
+```sh
+docker build -t flask-server-1 .
+docker tag flask-server-1:latest <your-docker-hub-username>/flask-server
+docker push <your-docker-hub-username>/flask-server
+```
+
+![alt text](image-10.png)
+
+## Step 3: Install and configure k3s and worker nodes
+
+### Step 3.1: Install k3s on Master Node:
 
 - Run the following command on the master node to install k3s:
   ```bash
@@ -257,7 +317,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
 ![alt text](image.png)
 
-### Step 2.2: Join Worker Nodes to the Cluster:
+### Step 3.2: Join Worker Nodes to the Cluster:
 
 - Retrieve the token from the master node to join worker nodes:
   ```bash
@@ -270,7 +330,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
   curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
   ```
 
-### Step 2.3: Verify Cluster Setup:
+### Step 3.3: Verify Cluster Setup:
 
 - SSH into the master node and verify that all nodes are part of the cluster:
   ```bash
@@ -281,104 +341,77 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     ![alt text](image-1.png)
 
 
-## Step 3: Deploy the servers in k3s cluster.
+## Step 4: Deploy the servers in k3s cluster.
 
-### Step 3.1: Create the manifest files
+### Step 4.1: Create the manifest files
 
 - Create a directory (e.g., *manifest*)
-```sh
-mkdir manifest
-cd manifest
-```
+    ```sh
+    mkdir manifest
+    cd manifest
+    ```
 - Create a manifest file for server1 deployment
 
 ```sh
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: server1-deployment
+name: server1-deployment
 spec:
-  replicas: 1
-  selector:
+replicas: 2
+selector:
     matchLabels:
-      app: server1
-  template:
+    app: server1
+template:
     metadata:
-      labels:
+    labels:
         app: server1
     spec:
-      containers:
-      - name: server1
+    containers:
+    - name: server1
         image: konami98/flask-server-1:v2
         ports:
         - containerPort: 5001
+    nodeSelector:
+        role: worker-node
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: server1-service
+name: server1-service
 spec:
-  selector:
+selector:
     app: server1
-  ports:
+ports:
     - protocol: TCP
-      port: 5001
-      targetPort: 5001
-      nodePort: 30001
-  type: NodePort
+    port: 5001
+    targetPort: 5001
+    nodePort: 30001
+type: NodePort
 ```
 
-- Create a manifest file for server2 deployment
+### 4.2: Label Your Worker Nodes
+First, you need to label both worker nodes.
 
-```sh
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: server2-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: server2
-  template:
-    metadata:
-      labels:
-        app: server2
-    spec:
-      containers:
-      - name: server2
-        image: konami98/flask-server-2:v2
-        ports:
-        - containerPort: 5002
+- Label worker-node-1:
 
----
+```bash
+kubectl label nodes <worker-node-1> role=worker-node
+```
+- Label worker-node-2:
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: server2-service
-spec:
-  selector:
-    app: server2
-  ports:
-    - protocol: TCP
-      port: 5002
-      targetPort: 5002
-      nodePort: 30002
-  type: NodePort
+```bash
+kubectl label nodes <worker-node-2> role=worker-node
 ```
 
-### Step 3.2: Create the resources
+### Step 4.2: Create the resources
 
 - Apply the manifests file
 
     ```sh
     kubectl apply -f server-1-deploy.yml
-    kubectl apply -f server-2-deploy.yml
     ```
-
-    ![alt text](image-2.png)
 
 - Check the created resources
 
@@ -386,13 +419,11 @@ spec:
     kubectl get all
     ```
 
-    ![alt text](image-3.png)
-
-## Step 4: Set up Nginx
+## Step 5: Set up Nginx
 
 Now, connect to the `nginx instance` and create a `nginx.conf` file and a `Dockerfile`. 
 
-### Step 4.1: Install Docker
+### Step 5.1: Install Docker
 
 - Create a file named `install.sh` and insert the following code:
 
@@ -433,7 +464,7 @@ Now, connect to the `nginx instance` and create a `nginx.conf` file and a `Docke
     ./install.sh
     ```
 
-### Step 4.2: Configure Nginx
+### Step 5.2: Configure Nginx
 
 - Create a directory (e.g., `Nginx`)
 
@@ -483,7 +514,7 @@ cd Nginx
 
     This command starts the Nginx container with our custom configuration.
 
-## Step 05: Telnet the instances
+## Step 6: Telnet the instances
 
 - Telnet from local machine to nginx server
 
@@ -492,18 +523,17 @@ cd Nginx
     ```
     ![alt text](image-4.png)
 
-- Telnet from Load-balancer instance(nginx) to k3s cluster nodeport
+- Telnet from Load-balancer instance(nginx) to k3s cluster worker nodeport
 
     ```sh
     telnet <master-instance-ip> 30001
-    telnet <master-instance-ip> 30002
     ```
 
     ![alt text](image-5.png)
 
-## Step 06: Verification
+## Step 7: Verification
 
 - Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
 
-![alt text](image-6.png)
+![alt text](image-11.png)
 

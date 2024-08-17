@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: server1-deployment
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: server1
@@ -17,6 +17,8 @@ spec:
         image: konami98/flask-server-1:v2
         ports:
         - containerPort: 5001
+      nodeSelector:
+        role: worker-node
 
 ---
 apiVersion: v1
