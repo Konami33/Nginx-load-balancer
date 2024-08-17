@@ -10,7 +10,7 @@ COPY . /app
 # Install any needed packages
 RUN pip install --no-cache-dir Flask
 
-# Make port 5001 available to the world outside this container
+# Make port 5002 available to the world outside this container
 EXPOSE 5002
 
 # Define environment variable
