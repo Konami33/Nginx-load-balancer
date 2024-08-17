@@ -6,6 +6,8 @@ In this lab, we will set up a lightweight Kubernetes environment using `K3s` on 
 
 ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-8.png)
 
+Basically, these are the task we will perform in this lab:
+
 1. Create AWS infrastructure using PULUMI
 2. Create a simple flask server, build image, push to docker hub
 3. Install and configure k3s and worker nodes
