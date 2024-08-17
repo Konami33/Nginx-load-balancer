@@ -4,7 +4,7 @@
 
 In this lab, we will set up a lightweight Kubernetes environment using `K3s` on an AWS EC2 instance. Following the installation, we will configure Nginx as a `Layer 4 load balancer` to manage traffic to worker nodes. The services will be exposed using Kubernetes NodePort, allowing external access through Nginx.
 
-![alt text](./images/image-8.png)
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-8.png)
 
 1. Create AWS infrastructure using PULUMI
 2. Create a simple flask server, build image, push to docker hub
@@ -14,7 +14,7 @@ In this lab, we will set up a lightweight Kubernetes environment using `K3s` on 
 6. Configure Nginx to load balance traffic to the worker node EC2 instances
 7. Test the load balancer to ensure it is working correctly
 
-![alt text](./images/arch.png)
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/arch.png)
 
 ## Step by step guide
 
@@ -229,7 +229,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
      ```
    - Review the changes and confirm by typing "yes".
 
-   ![alt text](./images/image-9.png)
+   ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-9.png)
 
 ### Step 1.5: Verify the Deployment
 
@@ -299,7 +299,7 @@ docker tag flask-server-1:latest <your-docker-hub-username>/flask-server
 docker push <your-docker-hub-username>/flask-server
 ```
 
-![alt text](./images/image-10.png)
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-10.png)
 
 ## Step 3: Install and configure k3s and worker nodes
 
@@ -311,7 +311,7 @@ docker push <your-docker-hub-username>/flask-server
   ```
 - After installation, the master node should become the control plane for your Kubernetes cluster.
 
-![alt text](./images/image.png)
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image.png)
 
 ### Step 3.2: Join Worker Nodes to the Cluster:
 
@@ -338,7 +338,7 @@ docker push <your-docker-hub-username>/flask-server
   ```
 - You should see the master node and both worker nodes listed as ready.
 
-    ![alt text](./images/image-1.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-1.png)
 
 
 ## Step 4: Deploy the servers in k3s cluster.
@@ -480,8 +480,8 @@ cd Nginx
 
     stream {
         upstream flask_app {
-            server <master-instance-ip>:30001;
-            server <master-instance-ip>:30002;
+            server <worker1-instance-ip>:30001;
+            server <worker2-instance-ip>:30001;
         }
 
         server {
@@ -521,7 +521,7 @@ cd Nginx
     ```sh
     telnet <nginx-instance-ip> 80
     ```
-    ![alt text](./images/image-4.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-4.png)
 
 - Telnet from Load-balancer instance(nginx) to k3s cluster worker nodeport
 
@@ -529,11 +529,11 @@ cd Nginx
     telnet <master-instance-ip> 30001
     ```
 
-    ![alt text](./images/image-5.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-5.png)
 
 ## Step 7: Verification
 
 - Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
 
-![alt text](./images/image-11.png)
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-11.png)
 
