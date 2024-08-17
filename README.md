@@ -80,174 +80,89 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 1. **Open `index.js`**:
    - Open the `index.js` file in your project directory.
 
-2. **Create the VPC**:
-   - A Virtual Private Cloud (VPC) is a virtual network dedicated to your AWS account. You can configure your VPC with a range of IP addresses, subnets, route tables, and network gateways.
-   ```javascript
-   const pulumi = require("@pulumi/pulumi");
-   const aws = require("@pulumi/aws");
+    ```js
 
-   // Create a VPC
-   const vpc = new aws.ec2.Vpc("my-vpc", {
-       cidrBlock: "10.0.0.0/16",
-       tags: {
-        Name: "my-vpc"
-       }
-   });
+    const pulumi = require("@pulumi/pulumi");
+    const aws = require("@pulumi/aws");
 
-   exports.vpcId = vpc.id;
-   ```
+    // Create a VPC
+    const vpc = new aws.ec2.Vpc("my-vpc", {
+        cidrBlock: "10.0.0.0/16",
+        tags: {
+            Name: "my-vpc"
+        }
+    });
 
-3. **Create the Public Subnet**:
-   - A public subnet is one that has a route to an Internet Gateway, enabling instances within it to communicate with the Internet.
-   ```javascript
-   // Create a public subnet
-   const publicSubnet = new aws.ec2.Subnet("public-subnet", {
-       vpcId: vpc.id,
-       cidrBlock: "10.0.1.0/24",
-       availabilityZone: "us-east-1a",
-       mapPublicIpOnLaunch: true,
-       tags: {
-        Name: "public-subnet"
-       }
-   });
+    exports.vpcId = vpc.id;
 
-   exports.publicSubnetId = publicSubnet.id;
-   ```
+    // Create a public subnet
+    const publicSubnet = new aws.ec2.Subnet("public-subnet", {
+        vpcId: vpc.id,
+        cidrBlock: "10.0.1.0/24",
+        availabilityZone: "ap-southeast-1a",
+        mapPublicIpOnLaunch: true,
+        tags: {
+            Name: "public-subnet"
+        }
+    });
 
-4. **Create the Private Subnet**:
-   - A private subnet does not have a route to an Internet Gateway, preventing instances within it from directly communicating with the Internet.
-   ```javascript
-   // Create a private subnet
-   const privateSubnet = new aws.ec2.Subnet("private-subnet", {
-       vpcId: vpc.id,
-       cidrBlock: "10.0.2.0/24",
-       availabilityZone: "us-east-1a",
-       tags: {
-        Name: "private-subnet"
-       }
-   });
+    exports.publicSubnetId = publicSubnet.id;
 
-   exports.privateSubnetId = privateSubnet.id;
-   ```
+    // Create an Internet Gateway
+    const igw = new aws.ec2.InternetGateway("internet-gateway", {
+        vpcId: vpc.id,
+        tags: {
+            Name: "igw"
+        }
+    });
 
-5. **Create the Internet Gateway**:
-   - An Internet Gateway (IGW) allows communication between instances in your VPC and the Internet.
-   ```javascript
-   // Create an Internet Gateway
-   const igw = new aws.ec2.InternetGateway("internet-gateway", {
-       vpcId: vpc.id,
-       tags: {
-        Name: "igw"
-       }
-   });
+    exports.igwId = igw.id;
 
-   exports.igwId = igw.id;
-   ```
+    // Create a route table
+    const publicRouteTable = new aws.ec2.RouteTable("public-route-table", {
+        vpcId: vpc.id,
+        tags: {
+            Name: "rt-public"
+        }
+    });
 
-6. **Create the Public Route Table and Associate with Public Subnet**:
-   - A route table contains a set of rules, called routes, that are used to determine where network traffic is directed. Here, you will create a route table, add a route to the IGW, and associate it with the public subnet.
-   ```javascript
-   // Create a route table
-   const publicRouteTable = new aws.ec2.RouteTable("public-route-table", {
-       vpcId: vpc.id,
-       tags: {
-        Name: "rt-public"
-       }
-   });
+    // Create a route in the route table for the Internet Gateway
+    const route = new aws.ec2.Route("igw-route", {
+        routeTableId: publicRouteTable.id,
+        destinationCidrBlock: "0.0.0.0/0",
+        gatewayId: igw.id
+    });
 
-   // Create a route in the route table for the Internet Gateway
-   const route = new aws.ec2.Route("igw-route", {
-       routeTableId: publicRouteTable.id,
-       destinationCidrBlock: "0.0.0.0/0",
-       gatewayId: igw.id
-   });
+    // Associate the route table with the public subnet
+    const routeTableAssociation = new aws.ec2.RouteTableAssociation("public-route-table-association", {
+        subnetId: publicSubnet.id,
+        routeTableId: publicRouteTable.id
+    });
 
-   // Associate the route table with the public subnet
-   const routeTableAssociation = new aws.ec2.RouteTableAssociation("public-route-table-association", {
-       subnetId: publicSubnet.id,
-       routeTableId: publicRouteTable.id
-   });
+    exports.publicRouteTableId = publicRouteTable.id;
 
-   exports.publicRouteTableId = publicRouteTable.id;
-   ```
 
-7. **Create the NAT Gateway**:
-   - A NAT Gateway allows instances in a private subnet to connect to the Internet or other AWS services, but prevents the Internet from initiating connections with the instances. This is necessary for updating instances in the private subnet.
-   ```javascript
-   // Allocate an Elastic IP for the NAT Gateway
-   const eip = new aws.ec2.Eip("nat-eip", { vpc: true });
-
-   // Create the NAT Gateway
-   const natGateway = new aws.ec2.NatGateway("nat-gateway", {
-       subnetId: publicSubnet.id,
-       allocationId: eip.id,
-       tags: {
-        Name: "nat"
-       }
-   });
-
-   exports.natGatewayId = natGateway.id;
-   ```
-
-8. **Create the Private Route Table and Associate with Private Subnet**:
-   - The private route table directs traffic from the private subnet to the NAT Gateway for outbound Internet access.
-   ```javascript
-   // Create a route table for the private subnet
-   const privateRouteTable = new aws.ec2.RouteTable("private-route-table", {
-       vpcId: vpc.id,
-       tags: {
-        Name: "rt-private"
-       }
-   });
-
-   // Create a route in the route table for the NAT Gateway
-   const privateRoute = new aws.ec2.Route("nat-route", {
-       routeTableId: privateRouteTable.id,
-       destinationCidrBlock: "0.0.0.0/0",
-       natGatewayId: natGateway.id
-   });
-
-   // Associate the route table with the private subnet
-   const privateRouteTableAssociation = new aws.ec2.RouteTableAssociation("private-route-table-association", {
-       subnetId: privateSubnet.id,
-       routeTableId: privateRouteTable.id
-   });
-
-   exports.privateRouteTableId = privateRouteTable.id;
-   ```
-
-9. **Create Security Group**:
-   - Create security Group with necessary rules. Here we have allowed all traffic for demonstration. But is not recommended for production. Change the rules according to your ports and addresses.
-
-   ```javascript
-   // Create a security group for the public instance
-   const publicSecurityGroup = new aws.ec2.SecurityGroup("public-secgrp", {
-       vpcId: vpc.id,
-       description: "Enable HTTP and SSH access for public instance",
-       ingress: [
+    // Create a security group for the public instance
+    const publicSecurityGroup = new aws.ec2.SecurityGroup("public-secgrp", {
+        vpcId: vpc.id,
+        description: "Enable HTTP and SSH access for public instance",
+        ingress: [
             {
                 protocol: "-1", // -1 means all protocols
                 fromPort: 0,    // 0 means all ports
                 toPort: 65535,  // 65535 is the highest port number
                 cidrBlocks: ["0.0.0.0/0"], // Allow all IP addresses
             },
-       ],
-       egress: [
-           { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
-       ]
-   });
-   ```
-   Explanation:
-    - protocol: "-1": This allows all protocols (TCP, UDP, ICMP, etc.).
-    - fromPort: 0 and toPort: 65535: This allows all ports from the lowest to the highest (0-65535).
-    - cidrBlocks: ["0.0.0.0/0"]: This allows traffic from any IP address.
+        ],
+        egress: [
+            { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
+        ]
+    });
 
-9. **Create EC2 instances**:
-- Create nginx ec2 instance
-    ```js
     // Use the specified Ubuntu 24.04 LTS AMI
     const amiId = "ami-060e277c0d4cce553";
 
+    // Create nginx instance
     const nginxInstance = new aws.ec2.Instance("nginx-instance", {
         instanceType: "t2.micro",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
@@ -262,11 +177,8 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
     exports.publicInstanceId = nginxInstance.id;
     exports.publicInstanceIp = nginxInstance.publicIp;
-   ```
 
-- Create master ec2 instance
-
-    ```js
+    // Create master instance
     const masterInstance = new aws.ec2.Instance("master-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
@@ -281,11 +193,8 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
     exports.publicInstanceId = masterInstance.id;
     exports.publicInstanceIp = masterInstance.publicIp;
-    ```
 
-- Create worker ec2 instances
-
-    ```js
+    // Create worker1 instance
     const worker1Instance = new aws.ec2.Instance("worker1-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
@@ -301,7 +210,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     exports.publicInstanceId = worker1Instance.id;
     exports.publicInstanceIp = worker1Instance.publicIp;
 
-
+    // create worker2 instance
     const worker2Instance = new aws.ec2.Instance("worker2-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
@@ -326,6 +235,8 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
      pulumi up
      ```
    - Review the changes and confirm by typing "yes".
+
+   ![alt text](image-9.png)
 
 ### Step 1.5: Verify the Deployment
 
