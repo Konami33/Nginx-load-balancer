@@ -26,13 +26,11 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 ### Step 1.1: Configure AWS CLI
 
-#### Configure AWS CLI
+- Configure AWS CLI with the necessary credentials. Run the following command and follow the prompts to configure it:
 
-Configure AWS CLI with the necessary credentials. Run the following command and follow the prompts to configure it:
-
-```sh
-aws configure
-```
+    ```sh
+    aws configure
+    ```
 
 - **Explanation**: This command sets up your AWS CLI with the necessary credentials, region, and output format.
 
@@ -396,19 +394,19 @@ spec:
 
 ```
 
-### 4.2: Label Your Worker Nodes
+### Step 4.2: Label Your Worker Nodes
 We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
 
 - Label worker-node-1:
 
-```bash
-kubectl label nodes <worker-node-1> role=worker-node
-```
+    ```bash
+    kubectl label nodes <worker-node-1> role=worker-node
+    ```
 - Label worker-node-2:
 
-```bash
-kubectl label nodes <worker-node-2> role=worker-node
-```
+    ```bash
+    kubectl label nodes <worker-node-2> role=worker-node
+    ```
 
 **NOTE:** Make sure to replace with your worker node name
 
