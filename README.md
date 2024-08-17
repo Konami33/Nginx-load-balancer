@@ -144,12 +144,8 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
         vpcId: vpc.id,
         description: "Enable HTTP and SSH access for public instance",
         ingress: [
-            {
-                protocol: "-1", // -1 means all protocols
-                fromPort: 0,    // 0 means all ports
-                toPort: 65535,  // 65535 is the highest port number
-                cidrBlocks: ["0.0.0.0/0"], // Allow all IP addresses
-            },
+            { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"] },
+            { protocol: "tcp", fromPort: 22, toPort: 22, cidrBlocks: ["0.0.0.0/0"] }
         ],
         egress: [
             { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
