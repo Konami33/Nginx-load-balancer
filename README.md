@@ -4,12 +4,16 @@
 
 In this scenario, you are tasked with setting up a lightweight Kubernetes environment using K3s on an AWS EC2 instance. Following the installation, you will configure Nginx as a Layer 4 load balancer to manage traffic to your Kubernetes services. The services will be exposed using Kubernetes NodePort, allowing external access through Nginx.
 
+![alt text](image-8.png)
+
 1. Create AWS infrastructure using PULUMI
 2. Install and configure k3s and worker nodes
 3. Deploy the servers in k3s cluster.
 4. Install Nginx on the load balancer EC2 instance
 5. Configure Nginx to load balance traffic to the worker node EC2 instances
 6. Test the load balancer to ensure it is working correctly
+
+![alt text](image-7.png)
 
 ## Step by step guide
 
@@ -587,3 +591,8 @@ cd Nginx
     ![alt text](image-5.png)
 
 ## Step 06: Verification
+
+- Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
+
+![alt text](image-6.png)
+
