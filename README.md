@@ -14,7 +14,7 @@ In this lab, we will set up a lightweight Kubernetes environment using `K3s` on 
 6. Configure Nginx to load balance traffic to the worker node EC2 instances
 7. Test the load balancer to ensure it is working correctly
 
-![alt text](image-12.png)
+![alt text](image-13.png)
 
 ## Step by step guide
 
