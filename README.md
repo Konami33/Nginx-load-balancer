@@ -1,4 +1,4 @@
-# Installation of K3s and Nginx Layer 4 Load Balancing with NodePort Service Exposure in AWS EC2
+# Installation of K3s and Nginx Layer 4 Load Balancing in AWS
 
 ## Overview
 
@@ -22,13 +22,13 @@ Basically, these are the task we will perform in this lab:
 
 ## Step 1: Create AWS infrastructure using PULUMI
 
-For this project, we need an instance for NGINX, and three instance for k3s (master-instance, worker1-instance, worker2-instance)
+For this project, we need an instance for NGINX, and three instance for k3s (master-instance, worker1-instance, worker2-instance) and other necessary resouces.
 
 ### Step 1.1: Configure AWS CLI
 
 #### Configure AWS CLI
 
-After installing the AWS CLI, configure it with the necessary credentials. Run the following command and follow the prompts to configure it:
+Configure AWS CLI with the necessary credentials. Run the following command and follow the prompts to configure it:
 
 ```sh
 aws configure
@@ -80,7 +80,6 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
    - Open the `index.js` file in your project directory.
 
     ```js
-
     const pulumi = require("@pulumi/pulumi");
     const aws = require("@pulumi/aws");
 
@@ -222,7 +221,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     exports.publicInstanceIp = worker2Instance.publicIp;
     ```
 
-**NOTE:** Update the security group accordingly
+**NOTE:** Update the security group inbound rules accordingly to your requirement.
 
 ### Step 1.4: Deploy the Pulumi Stack
 
@@ -233,14 +232,13 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
      ```
    - Review the changes and confirm by typing "yes".
 
-   ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-9.png)
-
 ### Step 1.5: Verify the Deployment
 
 **Check the Outputs**:
 
 - After the deployment completes, you should see the exported VPC ID, public subnet ID, private subnet ID, NAT Gateway ID, and instance IDs in the output.
 
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-9.png)
 
 ## Step 2: Create a simple flask server, build image, push to docker hub
 
@@ -297,11 +295,11 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
 - Build and push the image to docker hub
 
-```sh
-docker build -t flask-server-1 .
-docker tag flask-server-1:latest <your-docker-hub-username>/flask-server
-docker push <your-docker-hub-username>/flask-server
-```
+    ```sh
+    docker build -t flask-server-1 .
+    docker tag flask-server-1:latest <your-docker-hub-username>/flask-server
+    docker push <your-docker-hub-username>/flask-server
+    ```
 
 ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-10.png)
 
@@ -326,6 +324,7 @@ docker push <your-docker-hub-username>/flask-server
 - Copy the token.
 
 - SSH into `each worker node` and run the following command to join it to the cluster (replace `<master-ip>` with the private IP of the master node and `<token>` with the token obtained earlier):
+
   ```bash
   curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
   ```
@@ -333,10 +332,12 @@ docker push <your-docker-hub-username>/flask-server
 ### Step 3.3: Verify Cluster Setup:
 
 - SSH into the master node and set the permission.
+
     ```sh
     sudo chmod 644 /etc/rancher/k3s/k3s.yaml
     ```
 - Run this command to verify all nodes
+
   ```bash
   kubectl get nodes
   ```
@@ -349,12 +350,12 @@ docker push <your-docker-hub-username>/flask-server
 
 ### Step 4.1: Create the manifest files
 
-- Create a directory (e.g., *manifest*)
+- SSH into Master instance and Create a directory (e.g., *manifest*)
     ```sh
     mkdir manifest
     cd manifest
     ```
-- Create a manifest file for server1 deployment
+- Create manifest file for server1 deployment
 
 ```sh
 apiVersion: apps/v1
@@ -396,7 +397,7 @@ spec:
 ```
 
 ### 4.2: Label Your Worker Nodes
-First, you need to label both worker nodes.
+We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
 
 - Label worker-node-1:
 
@@ -408,6 +409,8 @@ kubectl label nodes <worker-node-1> role=worker-node
 ```bash
 kubectl label nodes <worker-node-2> role=worker-node
 ```
+
+**NOTE:** Make sure to replace with your worker node name
 
 ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-15.png)
 
@@ -425,11 +428,13 @@ kubectl label nodes <worker-node-2> role=worker-node
     kubectl get all
     ```
 
-## Step 5: Set up Nginx
+You can see the created pods, deployemt and service. Make sure all are in the running state.
 
-Now, connect to the `nginx instance` and create a `nginx.conf` file and a `Dockerfile`. 
+## Step 5: Set up Nginx in the Nginx instance
 
-### Step 5.1: Install Docker
+Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Dockerfile`. 
+
+### Step 5.1: Install Docker.
 
 - Create a file named `install.sh` and insert the following code:
 
@@ -458,26 +463,26 @@ Now, connect to the `nginx instance` and create a `nginx.conf` file and a `Docke
     docker --version
     ```
 
-- Make your script executable:
+- Make your script executable and run the srcipt
 
     ```bash
     chmod +x install.sh
+    ./install.sh
     ```
-
-- Execute the script to install Docker:
+- Verify Docker installation by running the following command:
 
     ```bash
-    ./install.sh
+    docker ps
     ```
 
 ### Step 5.2: Configure Nginx
 
 - Create a directory (e.g., `Nginx`)
 
-```bash
-mkdir Nginx
-cd Nginx
-```
+    ```bash
+    mkdir Nginx
+    cd Nginx
+    ```
 
 - Create nginx.conf in the Nginx directory with the following configuration:
 
@@ -546,8 +551,14 @@ cd Nginx
     ```
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-14.png)
 
+    Here, we can see our server is deployed in both the worker node.
+
 
 - Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
 
 ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-11.png)
+
+---
+
+So, we have completed our task successfully. We have installed and configure k3s and deployed the server in the k3s cluster. Then configured a layer4 loadbalancer using nginx.
 
