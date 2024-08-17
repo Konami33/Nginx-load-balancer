@@ -405,6 +405,8 @@ kubectl label nodes <worker-node-1> role=worker-node
 kubectl label nodes <worker-node-2> role=worker-node
 ```
 
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-15.png)
+
 ### Step 4.2: Create the resources
 
 - Apply the manifests file
@@ -526,12 +528,20 @@ cd Nginx
 - Telnet from Load-balancer instance(nginx) to k3s cluster worker nodeport
 
     ```sh
-    telnet <master-instance-ip> 30001
+    telnet <worker-node-ip> 30001
     ```
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-5.png)
 
 ## Step 7: Verification
+
+- Run this command to check if server is deployed in both worker node
+
+    ```sh
+    kubectl get pods -o wide
+    ```
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-14.png)
+
 
 - Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
 
