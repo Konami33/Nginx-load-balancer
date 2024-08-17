@@ -19,7 +19,6 @@ spec:
         - containerPort: 5001
       nodeSelector:
         role: worker-node
-
 ---
 apiVersion: v1
 kind: Service
@@ -34,6 +33,3 @@ spec:
       targetPort: 5001
       nodePort: 30001
   type: NodePort
-
-
-
