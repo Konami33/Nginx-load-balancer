@@ -4,7 +4,7 @@
 
 In this lab, we will set up a lightweight Kubernetes environment using `K3s` on an AWS EC2 instance. Following the installation, we will configure Nginx as a `Layer 4 load balancer` to manage traffic to worker nodes. The services will be exposed using Kubernetes NodePort, allowing external access through Nginx.
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/arch.png)
+![alt text](./images/arch.png)
 
 Basically, these are the task we will perform in this lab:
 
