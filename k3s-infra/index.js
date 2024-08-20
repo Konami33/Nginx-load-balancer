@@ -1,4 +1,3 @@
-
 const pulumi = require("@pulumi/pulumi");
 const aws = require("@pulumi/aws");
 
@@ -58,14 +57,12 @@ const routeTableAssociation = new aws.ec2.RouteTableAssociation("public-route-ta
 
 exports.publicRouteTableId = publicRouteTable.id;
 
-
-// Create a security group for the public instance
+// Create a security group for the public instance allowing all inbound traffic
 const publicSecurityGroup = new aws.ec2.SecurityGroup("public-secgrp", {
     vpcId: vpc.id,
-    description: "Enable HTTP and SSH access for public instance",
+    description: "Allow all inbound traffic for public instance for testing purpose",
     ingress: [
-        { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"] },
-        { protocol: "tcp", fromPort: 22, toPort: 22, cidrBlocks: ["0.0.0.0/0"] }
+        { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
     ],
     egress: [
         { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
@@ -81,61 +78,57 @@ const nginxInstance = new aws.ec2.Instance("nginx-instance", {
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
-    keyName: "MyKeyPair",
+    keyName: "nginx",
     associatePublicIpAddress: true,
     tags: {
         Name: "nginx-lb"
     }
 });
 
-exports.publicInstanceId = nginxInstance.id;
-exports.publicInstanceIp = nginxInstance.publicIp;
-
+exports.nginxInstanceId = nginxInstance.id;
+exports.nginxInstanceIp = nginxInstance.publicIp;
 
 const masterInstance = new aws.ec2.Instance("master-instance", {
     instanceType: "t3.small",
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
-    keyName: "MyKeyPair",
+    keyName: "k3sCluster",
     associatePublicIpAddress: true,
     tags: {
         Name: "master"
     }
 });
 
-exports.publicInstanceId = masterInstance.id;
-exports.publicInstanceIp = masterInstance.publicIp;
-
+exports.masterInstanceId = masterInstance.id;
+exports.masterInstanceIp = masterInstance.publicIp;
 
 const worker1Instance = new aws.ec2.Instance("worker1-instance", {
     instanceType: "t3.small",
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
-    keyName: "MyKeyPair",
+    keyName: "k3sCluster",
     associatePublicIpAddress: true,
     tags: {
         Name: "worker1"
     }
 });
 
-exports.publicInstanceId = worker1Instance.id;
-exports.publicInstanceIp = worker1Instance.publicIp;
-
+exports.worker1InstanceId = worker1Instance.id;
+exports.worker1InstanceIp = worker1Instance.publicIp;
 
 const worker2Instance = new aws.ec2.Instance("worker2-instance", {
     instanceType: "t3.small",
     vpcSecurityGroupIds: [publicSecurityGroup.id],
     ami: amiId,
     subnetId: publicSubnet.id,
-    keyName: "MyKeyPair",
+    keyName: "k3sCluster",
     associatePublicIpAddress: true,
     tags: {
         Name: "worker2"
     }
 });
 
-exports.publicInstanceId = worker2Instance.id;
-exports.publicInstanceIp = worker2Instance.publicIp;
-
+exports.worker2InstanceId = worker2Instance.id;
+exports.worker2InstanceIp = worker2Instance.publicIp;

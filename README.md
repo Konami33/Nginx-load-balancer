@@ -44,38 +44,44 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 ### Step 1.2: Set Up a Pulumi Project
 
 1. **Set Up a Pulumi Project**:
-   - Create a new directory for your project and navigate into it:
-     ```sh
-     mkdir aws-k3s-infra
-     cd aws-k3s-infra
-     ```
+- Create a new directory for your project and navigate into it:
+    ```sh
+    mkdir aws-k3s-infra
+    cd aws-k3s-infra
+    ```
 
 2. **Initialize a New Pulumi Project**:
-   - Run the following command to create a new Pulumi project:
-     ```sh
-     pulumi new aws-javascript
-     ```
-   - Follow the prompts to set up your project.
+- Run the following command to create a new Pulumi project:
+    ```sh
+    pulumi new aws-javascript
+    ```
+    Follow the prompts to set up your project.
 
-3. **Create a Key Pair**:
-   - Run the following command to create a new key pair:
-     ```sh
-     aws ec2 create-key-pair --key-name MyKeyPair --query 'KeyMaterial' --output text > MyKeyPair.pem
-     ```
+3. **Create Key Pair:**:
 
-4. **Set File Permissions**:
+- Nginx Instance
 
-   - **For Linux**:
-     ```sh
-     chmod 400 MyKeyPair.pem
-     ```
+    ```sh
+    aws ec2 create-key-pair --key-name nginx --query 'KeyMaterial' --output text > nginx.pem
+    ```
+- k3s cluster
 
-     ![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/8.jpg?raw=true)
+    ```sh
+    aws ec2 create-key-pair --key-name k3sCluster --query 'KeyMaterial' --output text > k3sCluster.pem
+    ```
+    These commands will create key pair for nginx instance and for k3s cluster(master, worker1, worker2)
 
-### Step 1.3: Create the Pulumi Program
+4. **Set File Permissions of the key files**:
 
-1. **Open `index.js`**:
-   - Open the `index.js` file in your project directory.
+- **For Linux**:
+    ```sh
+    chmod 400 nginx.pem
+    chmod 400 k3sCluster.pem
+    ```
+
+### Step 1.3: Write Code for infrastructure creation
+
+1. **Open `index.js` file in your project directory**:
 
     ```js
     const pulumi = require("@pulumi/pulumi");
@@ -137,14 +143,12 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
     exports.publicRouteTableId = publicRouteTable.id;
 
-
-    // Create a security group for the public instance
+    // Create a security group for the public instance allowing all inbound traffic
     const publicSecurityGroup = new aws.ec2.SecurityGroup("public-secgrp", {
         vpcId: vpc.id,
-        description: "Enable HTTP and SSH access for public instance",
+        description: "Allow all inbound traffic for public instance for testing purpose",
         ingress: [
-            { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"] },
-            { protocol: "tcp", fromPort: 22, toPort: 22, cidrBlocks: ["0.0.0.0/0"] }
+            { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
         ],
         egress: [
             { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
@@ -154,81 +158,78 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     // Use the specified Ubuntu 24.04 LTS AMI
     const amiId = "ami-060e277c0d4cce553";
 
-    // Create nginx instance
+    // Create an EC2 instance in the public subnet
     const nginxInstance = new aws.ec2.Instance("nginx-instance", {
         instanceType: "t2.micro",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
         ami: amiId,
         subnetId: publicSubnet.id,
-        keyName: "MyKeyPair",
+        keyName: "nginx",
         associatePublicIpAddress: true,
         tags: {
             Name: "nginx-lb"
         }
     });
 
-    exports.publicInstanceId = nginxInstance.id;
-    exports.publicInstanceIp = nginxInstance.publicIp;
+    exports.nginxInstanceId = nginxInstance.id;
+    exports.nginxInstanceIp = nginxInstance.publicIp;
 
-    // Create master instance
     const masterInstance = new aws.ec2.Instance("master-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
         ami: amiId,
         subnetId: publicSubnet.id,
-        keyName: "MyKeyPair",
+        keyName: "k3sCluster",
         associatePublicIpAddress: true,
         tags: {
             Name: "master"
         }
     });
 
-    exports.publicInstanceId = masterInstance.id;
-    exports.publicInstanceIp = masterInstance.publicIp;
+    exports.masterInstanceId = masterInstance.id;
+    exports.masterInstanceIp = masterInstance.publicIp;
 
-    // Create worker1 instance
     const worker1Instance = new aws.ec2.Instance("worker1-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
         ami: amiId,
         subnetId: publicSubnet.id,
-        keyName: "MyKeyPair",
+        keyName: "k3sCluster",
         associatePublicIpAddress: true,
         tags: {
             Name: "worker1"
         }
     });
 
-    exports.publicInstanceId = worker1Instance.id;
-    exports.publicInstanceIp = worker1Instance.publicIp;
+    exports.worker1InstanceId = worker1Instance.id;
+    exports.worker1InstanceIp = worker1Instance.publicIp;
 
-    // create worker2 instance
     const worker2Instance = new aws.ec2.Instance("worker2-instance", {
         instanceType: "t3.small",
         vpcSecurityGroupIds: [publicSecurityGroup.id],
         ami: amiId,
         subnetId: publicSubnet.id,
-        keyName: "MyKeyPair",
+        keyName: "k3sCluster",
         associatePublicIpAddress: true,
         tags: {
             Name: "worker2"
         }
     });
 
-    exports.publicInstanceId = worker2Instance.id;
-    exports.publicInstanceIp = worker2Instance.publicIp;
+    exports.worker2InstanceId = worker2Instance.id;
+    exports.worker2InstanceIp = worker2Instance.publicIp;
     ```
 
-**NOTE:** Update the security group inbound rules accordingly to your requirement.
+**NOTE:** Update the security group *inbound rules* accordingly to your requirement. But for now it is set up to allow http connection and ssh connection. You can change it later.
 
 ### Step 1.4: Deploy the Pulumi Stack
 
-1. **Run Pulumi Up**:
-   - Deploy the stack using:
-     ```sh
-     pulumi up
-     ```
-   - Review the changes and confirm by typing "yes".
+1. **Deploy the stack**:
+
+    ```sh
+    pulumi up
+    ```
+    Review the changes and confirm by typing "yes".
 
 ### Step 1.5: Verify the Deployment
 
@@ -236,15 +237,15 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
 - After the deployment completes, you should see the exported VPC ID, public subnet ID, private subnet ID, NAT Gateway ID, and instance IDs in the output.
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-9.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-14.png)
 
 ## Step 2: Create a simple flask server, build image, push to docker hub
 
-- Create a directory (e.g., flask-server-1)
+- Create a directory in your **local machine** (e.g., flask-server)
 
     ```sh
-    mkdir flask-server-1
-    cd flask-server-1
+    mkdir flask-server
+    cd flask-server
     ```
 - Create a file `app.py`
 
@@ -294,38 +295,136 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 - Build and push the image to docker hub
 
     ```sh
-    docker build -t flask-server-1 .
-    docker tag flask-server-1:latest <your-docker-hub-username>/flask-server
+    docker build -t flask-server .
+    docker tag flask-server:latest <your-docker-hub-username>/flask-server
     docker push <your-docker-hub-username>/flask-server
     ```
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-10.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-10.png)
 
-## Step 3: Install and configure k3s and worker nodes
+## Step 3: Configure SSH config file for SSHing into the servers
+In this `~/.ssh/` directory, create a `config` file that simplifies the SSH process for this scenario:
 
-### Step 3.1: Install k3s on Master Node:
+```sh
+Host nginx
+    HostName <nginx-public-ip>
+    User ubuntu
+    IdentityFile <path-to-your-keyfile>
 
-- Run the following command on the master node to install k3s:
-  ```bash
-  curl -sfL https://get.k3s.io | sh -
-  ```
-- After installation, the master node should become the control plane for your Kubernetes cluster.
+Host master
+    HostName <master-ip>
+    User ubuntu
+    IdentityFile <path-to-your-keyfile>
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image.png)
+Host worker1
+    HostName <master-ip>
+    User ubuntu
+    IdentityFile <path-to-your-keyfile>
 
-### Step 3.2: Join Worker Nodes to the Cluster:
+Host worker2
+    HostName <master-ip>
+    User ubuntu
+    IdentityFile <path-to-your-keyfile>
+```
+
+**Explanation of the Config File:**
+
+- `Host:` This section defines the connection to your server. The HostName is the public/private IP of the server
+- `User:` **Ubuntu** by default if your have launched an ubuntu instance. Change accordingly to your requirement.
+- `IdentityFile:` specifies the private key used for authentication. Change the location of your key file accordingly.
+
+### Test SSH connection
+
+- From local machine SSH into nginx instance:
+
+    ```sh
+    ssh nginx
+    ```
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-3.png)
+
+- From local SSH into master instance:
+
+    ```sh
+    ssh master
+    ```
+
+- From local SSH into worker1 instance:
+
+    ```sh
+    ssh worker1
+    ```
+- From local SSH into worker2 instance:
+
+    ```sh
+    ssh worker2
+    ```
+
+### Set hostname
+
+You can also set the hostname of the instances by run these commands
+
+- Nginx instance
+
+    ```sh
+    sudo hostnamectl set-hostname nginx
+    ```
+
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-4.png)
+
+- Master instance
+
+    ```sh
+    sudo hostnamectl set-hostname master
+    ```
+
+- Worker1 instance
+
+    ```sh
+    sudo hostnamectl set-hostname worker1
+    ```
+
+- Worker2 instance
+
+    ```sh
+    sudo hostnamectl set-hostname worker2
+    ```
+
+After this command, exit the terminal and again ssh into the servers to check if the hostname is setup correctly.
+
+## Step 4: Install and configure k3s and worker nodes
+
+### Install k3s on Master Node:
+
+- SSH into master node and run the following command to install k3s:
+
+    ```bash
+    curl -sfL https://get.k3s.io | sh -
+    ```
+
+- After installation, the master node should become the **control plane** for your Kubernetes cluster.
+
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-5.png)
+
+### Join Worker Nodes to the Cluster:
 
 - Retrieve the token from the master node to join worker nodes:
-  ```bash
-  sudo cat /var/lib/rancher/k3s/server/node-token
-  ```
+
+    ```bash
+    sudo cat /var/lib/rancher/k3s/server/node-token
+    ```
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-15.png)
+
 - Copy the token.
 
-- SSH into `each worker node` and run the following command to join it to the cluster (replace `<master-ip>` with the private IP of the master node and `<token>` with the token obtained earlier):
+- SSH into **each worker node** and run the following command to join it to the cluster (Remember to replace `<master-ip>` with the private IP of the master node and `<token>` with the token obtained earlier):
 
-  ```bash
-  curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
-  ```
+    ```bash
+    curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
+    ```
+
+- Check the status of k3s-agent
+
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-6.png)
 
 ### Step 3.3: Verify Cluster Setup:
 
@@ -336,12 +435,13 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     ```
 - Run this command to verify all nodes
 
-  ```bash
-  kubectl get nodes
-  ```
+    ```bash
+    kubectl get nodes
+    ```
+
 - You should see the master node and both worker nodes listed as ready.
 
-    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-1.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-7.png)
 
 
 ## Step 4: Deploy the servers in k3s cluster.
@@ -349,50 +449,50 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 ### Step 4.1: Create the manifest files
 
 - SSH into Master instance and Create a directory (e.g., *manifest*)
+
     ```sh
     mkdir manifest
     cd manifest
     ```
 - Create manifest file for server1 deployment
 
-```sh
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: server1-deployment
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: server1
-  template:
+    ```sh
+    apiVersion: apps/v1
+    kind: Deployment
     metadata:
-      labels:
-        app: server1
+    name: server1-deployment
     spec:
-      containers:
-      - name: server1
-        image: konami98/flask-server-1:v2
-        ports:
-        - containerPort: 5001
-      nodeSelector:
-        role: worker-node
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: server1-service
-spec:
-  selector:
-    app: server1
-  ports:
-    - protocol: TCP
-      port: 5001
-      targetPort: 5001
-      nodePort: 30001
-  type: NodePort
-
-```
+    replicas: 2
+    selector:
+        matchLabels:
+        app: server1
+    template:
+        metadata:
+        labels:
+            app: server1
+        spec:
+        containers:
+        - name: server1
+            image: konami98/flask-server-1:v2
+            ports:
+            - containerPort: 5001
+        nodeSelector:
+            role: worker-node
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+    name: server1-service
+    spec:
+    selector:
+        app: server1
+    ports:
+        - protocol: TCP
+        port: 5001
+        targetPort: 5001
+        nodePort: 30001
+    type: NodePort
+    ```
 
 ### Step 4.2: Label Your Worker Nodes
 We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
@@ -407,10 +507,9 @@ We need to label both worker nodes as we want to deploy the flask server in both
     ```bash
     kubectl label nodes <worker-node-2> role=worker-node
     ```
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-8.png)
 
-**NOTE:** Make sure to replace with your worker node name
-
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-15.png)
+    **NOTE:** Make sure to replace with your worker node name
 
 ### Step 4.2: Create the resources
 
@@ -425,6 +524,7 @@ We need to label both worker nodes as we want to deploy the flask server in both
     ```sh
     kubectl get all
     ```
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-9.png)
 
 You can see the created pods, deployemt and service. Make sure all are in the running state.
 
@@ -502,6 +602,10 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     }
     ```
 
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-10.png)
+
+    **NOTE**: Make sure to change the ip and nodeport
+
 - Create a Dockerfile
 
     ```Dockerfile
@@ -538,7 +642,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     telnet <worker-node-ip> 30001
     ```
 
-    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-16.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-11.png)
 
 ## Step 7: Verification
 
@@ -547,14 +651,14 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     ```sh
     kubectl get pods -o wide
     ```
-    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-14.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-12.png)
 
     Here, we can see our server is deployed in both the worker node.
 
 
 - Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-11.png)
+    ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-13.png)
 
 ---
 
