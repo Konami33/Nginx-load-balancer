@@ -17,13 +17,13 @@ Basically, these are the task we will perform in this lab:
 7. Test the connection using Telnet.
 8. Test the load balancer to ensure it is working correctly.
 
-![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-17.png)
-
 ## Step by step guide
 
 ## Step 1: Create AWS infrastructure using PULUMI
 
 For this project, we need an instance for NGINX, and three instance for k3s (master-instance, worker1-instance, worker2-instance) and other necessary resouces.
+
+![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-17.png)
 
 ### Configure AWS CLI
 
