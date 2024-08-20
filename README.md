@@ -454,7 +454,7 @@ After this command, exit the terminal and again ssh into the servers to check if
     mkdir manifest
     cd manifest
     ```
-- Create manifest file for server1 deployment
+- Create manifest file for server1 deployment (e.g., `flask-server.yml`)
 
     ```sh
     apiVersion: apps/v1
@@ -518,7 +518,7 @@ We need to label both worker nodes as we want to deploy the flask server in both
 - Apply the manifests file
 
     ```sh
-    kubectl apply -f server-1-deploy.yml
+    kubectl apply -f flask-server.yml
     ```
 
 - Check the created resources
@@ -658,11 +658,11 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     Here, we can see our server is deployed in both the worker node.
 
 
-- Visit http://<nginx-public-ip> in a web browser. You should see a response from one of the Flask applications deployed in k3s cluster.
+- Visit http://<nginx-public-ip> in a web browser. You should see a response from the Flask applications deployed in k3s cluster.
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-13.png)
 
 ---
 
-So, we have completed our task successfully. We have installed and configure k3s and deployed the server in the k3s cluster. Then configured a layer4 loadbalancer using nginx.
+So, we have completed our task successfully. We have created the infrastrucure, installed and configure k3s and deployed the server in the k3s cluster. Then configured a layer 4 loadbalancer using nginx.
 
