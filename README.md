@@ -34,17 +34,18 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 - **Explanation**: This command sets up your AWS CLI with the necessary credentials, region, and output format.
 
-![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/5.png?raw=true)
+    ![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/5.png?raw=true)
 
-You will find the `AWS Access key` and `AWS Seceret Access key` on Lab description page,where you generated the credentials
+    You will find the `AWS Access key` and `AWS Seceret Access key` on Lab description page,where you generated the credentials
 
-![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/6.png?raw=true)
+    ![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/6.png?raw=true)
 
 
 ### Step 1.2: Set Up a Pulumi Project
 
 1. **Set Up a Pulumi Project**:
 - Create a new directory for your project and navigate into it:
+
     ```sh
     mkdir aws-k3s-infra
     cd aws-k3s-infra
@@ -52,6 +53,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
 
 2. **Initialize a New Pulumi Project**:
 - Run the following command to create a new Pulumi project:
+
     ```sh
     pulumi new aws-javascript
     ```
@@ -220,7 +222,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     exports.worker2InstanceIp = worker2Instance.publicIp;
     ```
 
-**NOTE:** Update the security group *inbound rules* accordingly to your requirement. But for now it is set up to allow http connection and ssh connection. You can change it later.
+**NOTE:** Update the security group *inbound rules* accordingly to your requirement. But for now it is set up to allow all traffic. You can change it later.
 
 ### Step 1.4: Deploy the Pulumi Stack
 
@@ -247,7 +249,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
     mkdir flask-server
     cd flask-server
     ```
-- Create a file `app.py`
+- Create a file `flask-server/app.py`
 
     ```sh
     from flask import Flask, jsonify
@@ -267,7 +269,7 @@ You will find the `AWS Access key` and `AWS Seceret Access key` on Lab descripti
         app.run(host='0.0.0.0', port=5001)
     ```
 
-- Create a file `Dockerfile`
+- Create a file `flask-server/Dockerfile`
 
     ```sh
     # Use an official Python runtime as a parent image
@@ -309,22 +311,22 @@ In this `~/.ssh/` directory, create a `config` file that simplifies the SSH proc
 Host nginx
     HostName <nginx-public-ip>
     User ubuntu
-    IdentityFile <path-to-your-keyfile>
+    IdentityFile <path-to-your-keyfile>/nginx.pem
 
 Host master
     HostName <master-ip>
     User ubuntu
-    IdentityFile <path-to-your-keyfile>
+    IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 
 Host worker1
     HostName <master-ip>
     User ubuntu
-    IdentityFile <path-to-your-keyfile>
+    IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 
 Host worker2
     HostName <master-ip>
     User ubuntu
-    IdentityFile <path-to-your-keyfile>
+    IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 ```
 
 **Explanation of the Config File:**
