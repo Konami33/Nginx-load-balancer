@@ -8,13 +8,14 @@ In this lab, we will set up a lightweight Kubernetes environment using `K3s` on 
 
 Basically, these are the task we will perform in this lab:
 
-1. Create AWS infrastructure using PULUMI
-2. Create a simple flask server, build image, push to docker hub
-3. Install and configure k3s and worker nodes
-4. Deploy the servers in k3s cluster.
-5. Install Nginx on the load balancer EC2 instance
-6. Configure Nginx to load balance traffic to the worker node EC2 instances
-7. Test the load balancer to ensure it is working correctly
+1. Create AWS infrastructure using PULUMI.
+2. Create a simple flask server, build image, push to docker hub.
+3. Configure SSH config file for SSHing into the servers.
+4. Install and configure k3s and worker nodes.
+5. Deploy the servers in k3s cluster.
+6. Set up Nginx in the Nginx instance.
+7. Test the connection using Telnet.
+8. Test the load balancer to ensure it is working correctly.
 
 ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-17.png)
 
@@ -24,7 +25,7 @@ Basically, these are the task we will perform in this lab:
 
 For this project, we need an instance for NGINX, and three instance for k3s (master-instance, worker1-instance, worker2-instance) and other necessary resouces.
 
-### Step 1.1: Configure AWS CLI
+### Configure AWS CLI
 
 - Configure AWS CLI with the necessary credentials. Run the following command and follow the prompts to configure it:
 
@@ -41,7 +42,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
     ![](https://github.com/Konami33/poridhi.io.intern/blob/main/PULUMI/PULUMI%20js/Lab-3/images/6.png?raw=true)
 
 
-### Step 1.2: Set Up a Pulumi Project
+### Set Up a Pulumi Project
 
 1. **Set Up a Pulumi Project**:
 - Create a new directory for your project and navigate into it:
@@ -81,7 +82,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
     chmod 400 k3sCluster.pem
     ```
 
-### Step 1.3: Write Code for infrastructure creation
+### Write Code for infrastructure creation
 
 1. **Open `index.js` file in your project directory**:
 
@@ -224,7 +225,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 **NOTE:** Update the security group *inbound rules* accordingly to your requirement. But for now it is set up to allow all traffic. You can change it later.
 
-### Step 1.4: Deploy the Pulumi Stack
+### Deploy the Pulumi Stack
 
 1. **Deploy the stack**:
 
@@ -233,7 +234,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
     ```
     Review the changes and confirm by typing "yes".
 
-### Step 1.5: Verify the Deployment
+### Verify the Deployment
 
 **Check the Outputs**:
 
