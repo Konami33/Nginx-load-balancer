@@ -84,7 +84,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 ### Write Code for infrastructure creation
 
-1. **Open `index.js` file in your project directory**:
+- **Open `index.js` file in your project directory**:
 
     ```js
     const pulumi = require("@pulumi/pulumi");
@@ -227,7 +227,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 ### Deploy the Pulumi Stack
 
-1. **Deploy the stack**:
+- **Deploy the stack**:
 
     ```sh
     pulumi up
@@ -236,21 +236,19 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
 
 ### Verify the Deployment
 
-**Check the Outputs**:
-
-- After the deployment completes, you should see the exported VPC ID, public subnet ID, private subnet ID, NAT Gateway ID, and instance IDs in the output.
+- **Check the Outputs**: After the deployment completes, you should see the exported VPC ID, public subnet ID, private subnet ID, NAT Gateway ID, and instance IDs in the output.
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-14.png)
 
 ## Step 2: Create a simple flask server, build image, push to docker hub
 
-- Create a directory in your **local machine** (e.g., flask-server)
+- **Create a directory in your *local* machine (e.g., flask-server)**
 
     ```sh
     mkdir flask-server
     cd flask-server
     ```
-- Create a file `flask-server/app.py`
+- **Create a file `flask-server/app.py`**
 
     ```sh
     from flask import Flask, jsonify
@@ -270,7 +268,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
         app.run(host='0.0.0.0', port=5001)
     ```
 
-- Create a file `flask-server/Dockerfile`
+- **Create a file `flask-server/Dockerfile`**
 
     ```sh
     # Use an official Python runtime as a parent image
@@ -295,7 +293,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
     CMD ["flask", "run", "--host=0.0.0.0", "--port=5001"]
     ```
 
-- Build and push the image to docker hub
+- **Build and push the image to docker hub**
 
     ```sh
     docker build -t flask-server .
@@ -306,7 +304,7 @@ For this project, we need an instance for NGINX, and three instance for k3s (mas
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-10.png)
 
 ## Step 3: Configure SSH config file for SSHing into the servers
-In this `~/.ssh/` directory, create a `config` file that simplifies the SSH process for this scenario:
+In the `~/.ssh/` directory, create a `config` file that simplifies the SSH process for this scenario:
 
 ```sh
 Host nginx
@@ -338,25 +336,25 @@ Host worker2
 
 ### Test SSH connection
 
-- From local machine SSH into nginx instance:
+- **From local machine SSH into nginx instance:**
 
     ```sh
     ssh nginx
     ```
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-3.png)
 
-- From local SSH into master instance:
+- **From local SSH into master instance:**
 
     ```sh
     ssh master
     ```
 
-- From local SSH into worker1 instance:
+- **From local SSH into worker1 instance:**
 
     ```sh
     ssh worker1
     ```
-- From local SSH into worker2 instance:
+- **From local SSH into worker2 instance:**
 
     ```sh
     ssh worker2
@@ -366,7 +364,7 @@ Host worker2
 
 You can also set the hostname of the instances by run these commands
 
-- Nginx instance
+- **Nginx instance**
 
     ```sh
     sudo hostnamectl set-hostname nginx
@@ -374,19 +372,19 @@ You can also set the hostname of the instances by run these commands
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-4.png)
 
-- Master instance
+- **Master instance**
 
     ```sh
     sudo hostnamectl set-hostname master
     ```
 
-- Worker1 instance
+- **Worker1 instance**
 
     ```sh
     sudo hostnamectl set-hostname worker1
     ```
 
-- Worker2 instance
+- **Worker2 instance**
 
     ```sh
     sudo hostnamectl set-hostname worker2
@@ -398,51 +396,52 @@ After this command, exit the terminal and again ssh into the servers to check if
 
 ### Install k3s on Master Node:
 
-- SSH into master node and run the following command to install k3s:
+- **SSH into `master node` and run the following command to install k3s:**
 
     ```bash
     curl -sfL https://get.k3s.io | sh -
     ```
 
-- After installation, the master node should become the **control plane** for your Kubernetes cluster.
+- **After installation, the master node should become the `control plane` for your Kubernetes cluster.**
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-5.png)
 
 ### Join Worker Nodes to the Cluster:
 
-- Retrieve the token from the master node to join worker nodes:
+- **Retrieve the token from the master node to join worker nodes:**
 
     ```bash
     sudo cat /var/lib/rancher/k3s/server/node-token
     ```
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-15.png)
 
-- Copy the token.
+- **Copy the token.**
 
-- SSH into **each worker node** and run the following command to join it to the cluster (Remember to replace `<master-ip>` with the private IP of the master node and `<token>` with the token obtained earlier):
+- **SSH into each `worker node` and run the following command to join it to the cluster.** (Remember to replace `<master-ip>` with the private IP of the master node and `<token>` with the token obtained earlier):
 
     ```bash
     curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
     ```
 
-- Check the status of k3s-agent
+- **Check the status of k3s-agent**
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-6.png)
 
 ### Verify Cluster Setup:
 
-- SSH into the master node and set the permission.
+- **SSH into the master node and set the permission**
 
     ```sh
+    ssh master
     sudo chmod 644 /etc/rancher/k3s/k3s.yaml
     ```
-- Run this command to verify all nodes
+- **Run this command to verify all nodes**
 
     ```bash
     kubectl get nodes
     ```
 
-- You should see the master node and both worker nodes listed as ready.
+    You should see the master node and both worker nodes listed as ready.
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-7.png)
 
@@ -451,13 +450,13 @@ After this command, exit the terminal and again ssh into the servers to check if
 
 ### Create the manifest files
 
-- SSH into Master instance and Create a directory (e.g., *manifest*)
+- **SSH into Master instance and Create a directory (e.g., *manifest*)**
 
     ```sh
     mkdir manifest
     cd manifest
     ```
-- Create manifest file for server1 deployment (e.g., `flask-server.yml`)
+- **Create manifest file for server1 deployment (e.g., `flask-server.yml`)**
 
     ```yaml
     apiVersion: apps/v1
@@ -502,12 +501,12 @@ After this command, exit the terminal and again ssh into the servers to check if
 ### Label Your Worker Nodes
 We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
 
-- Label worker-node-1:
+- **Label worker-node-1:**
 
     ```bash
     kubectl label nodes <worker-node-1> role=worker-node
     ```
-- Label worker-node-2:
+- **Label worker-node-2:**
 
     ```bash
     kubectl label nodes <worker-node-2> role=worker-node
@@ -518,13 +517,13 @@ We need to label both worker nodes as we want to deploy the flask server in both
 
 ### Create the resources
 
-- Apply the manifests file
+- **Apply the manifests file**
 
     ```sh
     kubectl apply -f flask-server.yml
     ```
 
-- Check the created resources
+- **Check the created resources**
 
     ```sh
     kubectl get all
@@ -539,7 +538,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
 ### Install Docker.
 
-- Create a file named `install.sh` and insert the following code:
+- **Create a file named `install.sh` and insert the following code:**
 
     ```bash
     #!/bin/bash
@@ -566,13 +565,13 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     docker --version
     ```
 
-- Make your script executable and run the srcipt
+- **Make your script executable and run the srcipt**
 
     ```bash
     chmod +x install.sh
     ./install.sh
     ```
-- Verify Docker installation by running the following command:
+- **Verify Docker installation:**
 
     ```bash
     docker ps
@@ -580,16 +579,16 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
 ### Configure Nginx
 
-- Create a directory (e.g., `Nginx`)
+- **Create a directory (e.g., `Nginx`)**
 
     ```bash
     mkdir Nginx
     cd Nginx
     ```
 
-- Create nginx.conf in the Nginx directory with the following configuration:
+- **Create `nginx.conf` in the Nginx directory with the following configuration:**
 
-    ```sh
+    ```nginx
     events {}
 
     stream {
@@ -611,20 +610,21 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
     **NOTE**: Make sure to change the ip and nodeport
 
-- Create a Dockerfile
+- **Create a Dockerfile**
 
     ```Dockerfile
     FROM nginx:latest
     COPY nginx.conf /etc/nginx/nginx.conf
     ```
 
-- Build Nginx Docker Image
+- **Build Nginx Docker Image**
 
     ```bash
     docker build -t custom-nginx .
     ```
     This command builds a Docker image for Nginx with our custom configuration.
-- Run the Nginx Docker image
+
+- **Run the Nginx Docker image**
 
     ```bash
     docker run -d -p 80:80 --name my_nginx custom-nginx
@@ -634,14 +634,14 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
 ## Step 7: Telnet the instances
 
-- Telnet from local machine to nginx server
+- **Telnet from local machine to nginx server**
 
     ```sh
     telnet <nginx-instance-ip> 80
     ```
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/images/image-4.png)
 
-- Telnet from Load-balancer instance(nginx) to k3s cluster worker nodeport
+- **Telnet from Load-balancer instance(nginx) to k3s cluster worker nodeport**
 
     ```sh
     telnet <worker-node-ip> 30001
@@ -651,7 +651,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
 ## Step 8: Verification
 
-- Run this command to check if server is deployed in both worker node
+- **Run this command to check if server is deployed in both worker node**
 
     ```sh
     kubectl get pods -o wide
@@ -661,7 +661,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     Here, we can see our server is deployed in both the worker node.
 
 
-- Visit http://<nginx-public-ip> in a web browser. You should see a response from the Flask applications deployed in k3s cluster.
+- **Visit `http://<nginx-public-ip>` in a web browser. You should see a response from the Flask applications deployed in k3s cluster.**
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-13.png)
 
