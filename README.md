@@ -319,12 +319,12 @@ Host master
     IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 
 Host worker1
-    HostName <master-ip>
+    HostName <worker1-instance-ip>
     User ubuntu
     IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 
 Host worker2
-    HostName <master-ip>
+    HostName <worker2-instance-ip>
     User ubuntu
     IdentityFile <path-to-your-keyfile>/k3sCluster.pem
 ```
@@ -428,7 +428,7 @@ After this command, exit the terminal and again ssh into the servers to check if
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-6.png)
 
-### Step 3.3: Verify Cluster Setup:
+### Verify Cluster Setup:
 
 - SSH into the master node and set the permission.
 
@@ -446,9 +446,9 @@ After this command, exit the terminal and again ssh into the servers to check if
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-7.png)
 
 
-## Step 4: Deploy the servers in k3s cluster.
+## Step 5: Deploy the servers in k3s cluster.
 
-### Step 4.1: Create the manifest files
+### Create the manifest files
 
 - SSH into Master instance and Create a directory (e.g., *manifest*)
 
@@ -498,7 +498,7 @@ After this command, exit the terminal and again ssh into the servers to check if
 
     With this configuration, **k3s** will schedule your pods on nodes with the label `role=worker-node`, which in this case are worker1 and worker2.
 
-### Step 4.2: Label Your Worker Nodes
+### Label Your Worker Nodes
 We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
 
 - Label worker-node-1:
@@ -515,7 +515,7 @@ We need to label both worker nodes as we want to deploy the flask server in both
 
     **NOTE:** Make sure to replace with your worker node name
 
-### Step 4.2: Create the resources
+### Create the resources
 
 - Apply the manifests file
 
@@ -532,11 +532,11 @@ We need to label both worker nodes as we want to deploy the flask server in both
 
 You can see the created pods, deployemt and service. Make sure all are in the running state.
 
-## Step 5: Set up Nginx in the Nginx instance
+## Step 6: Set up Nginx in the Nginx instance
 
 Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Dockerfile`. 
 
-### Step 5.1: Install Docker.
+### Install Docker.
 
 - Create a file named `install.sh` and insert the following code:
 
@@ -577,7 +577,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
     docker ps
     ```
 
-### Step 5.2: Configure Nginx
+### Configure Nginx
 
 - Create a directory (e.g., `Nginx`)
 
@@ -631,7 +631,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
     This command starts the Nginx container with our custom configuration.
 
-## Step 6: Telnet the instances
+## Step 7: Telnet the instances
 
 - Telnet from local machine to nginx server
 
@@ -648,7 +648,7 @@ Now, connect to the `Nginx instance` and create a `nginx.conf` file and a `Docke
 
     ![alt text](https://github.com/Konami33/Nginx-load-balancer/raw/main/img/image-11.png)
 
-## Step 7: Verification
+## Step 8: Verification
 
 - Run this command to check if server is deployed in both worker node
 
