@@ -494,6 +494,8 @@ After this command, exit the terminal and again ssh into the servers to check if
     type: NodePort
     ```
 
+    With this configuration, **k3s** will schedule your pods on nodes with the label `role=worker-node`, which in this case are worker1 and worker2.
+
 ### Step 4.2: Label Your Worker Nodes
 We need to label both worker nodes as we want to deploy the flask server in both the worker nodes.
 
