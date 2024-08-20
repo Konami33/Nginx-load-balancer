@@ -459,7 +459,7 @@ After this command, exit the terminal and again ssh into the servers to check if
     ```
 - Create manifest file for server1 deployment (e.g., `flask-server.yml`)
 
-    ```sh
+    ```yaml
     apiVersion: apps/v1
     kind: Deployment
     metadata:
